@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaDock — Color Picker for macOS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glow {
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        nav {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 48px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: #fff; }
+
+        main {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 24px 80px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 100px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 32px;
+        }
+
+        .badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        h1 {
+            font-size: clamp(48px, 8vw, 80px);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            margin-bottom: 24px;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.4);
+            max-width: 440px;
+            line-height: 1.6;
+            margin-bottom: 48px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 64px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255,255,255,0.9);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .preview {
+            width: 100%;
+            max-width: 520px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 80px;
+        }
+
+        .mock-menubar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .mock-menubar .drop {
+            font-size: 20px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mock-popover {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .mock-color-picker {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .mock-color-picker::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            background: #fff;
+            border-radius: 50%;
+            border: 3px solid #000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .mock-copy-btn {
+            width: 100%;
+            padding: 10px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            max-width: 640px;
+            width: 100%;
+            margin-bottom: 80px;
+        }
+
+        .feature {
+            padding: 24px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .feature p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.5;
+        }
+
+        .install-section {
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .install-section h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .install-section p {
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .terminal {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+        }
+
+        .terminal-header {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+
+        .terminal-line {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .terminal-line .prompt {
+            color: #22c55e;
+        }
+
+        .terminal-line .cmd {
+            color: #fff;
+        }
+
+        .terminal-line .output {
+            color: rgba(255,255,255,0.3);
+        }
+
+        footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 32px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 13px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        @media (max-width: 640px) {
+            nav { padding: 16px 24px; }
+            .nav-links { gap: 20px; }
+            main { padding: 80px 24px 60px; }
+            .features { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow"></div>
+
+    <nav>
+        <div class="logo">
+            <div class="logo-icon">💧</div>
+            ChromaDock
+        </div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#install">Install</a>
+            <a href="https://github.com/hrgang-hrushi/color-dock" target="_blank">GitHub</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="badge">v1.0 — Now Available</div>
+
+        <h1>Pick colors<br>from your <span>menu bar</span></h1>
+
+        <p class="subtitle">A minimal macOS color picker that lives in your menu bar. Select any color and copy its hex code with one click.</p>
+
+        <div class="actions">
+            <a href="#install" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Install Now
+            </a>
+            <a href="https://github.com/hrgang-hrushi/color-dock" class="btn btn-secondary" target="_blank">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                View Source
+            </a>
+        </div>
+
+        <div class="preview">
+            <div class="mock-menubar">
+                <span class="drop">💧</span>
+                <span>ChromaDock</span>
+            </div>
+            <div class="mock-popover">
+                <div class="mock-color-picker"></div>
+                <div class="mock-copy-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy Hex
+                </div>
+            </div>
+        </div>
+
+        <div class="features" id="features">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Instant Access</h3>
+                <p>One click from your menu bar. No need to open a full app.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎨</div>
+                <h3>Native Picker</h3>
+                <p>Uses macOS's built-in color picker with full spectrum support.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📋</div>
+                <h3>Copy Hex</h3>
+                <p>One click to copy the hex code to your clipboard.</p>
+            </div>
+        </div>
+
+        <div class="install-section" id="install">
+            <h2>Install in seconds</h2>
+            <p>Clone, build, and run — no Xcode needed.</p>
+
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dot red"></div>
+                    <div class="terminal-dot yellow"></div>
+                    <div class="terminal-dot green"></div>
+                </div>
+                <div class="terminal-line">
+                    <span class="prompt">$</span>
+                    <span class="cmd">git clone https://github.com/hrgang-hrushi/color-dock.git</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="output">Cloning into 'color-dock'...</span>
+                </div>
+                <div class="terminal-line" style="margin-top: 12px;">
+                    <span class="prompt">$</span>
+                    <span class="cmd">cd color-dock && npm run dev</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="output">Building for debugging...</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="output">✅ App launched in menu bar</span>
+                </div>
+                <div class="terminal-line" style="margin-top: 12px;">
+                    <span class="prompt">$</span>
+                    <span class="cmd">npm run installer</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="output">📦 ChromaDock.dmg created in ./dist</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        Built with SwiftUI · No Xcode required · <a href="https://github.com/hrgang-hrushi/color-dock" style="color: rgba(255,255,255,0.5);" target="_blank">GitHub</a>
+    </footer>
+</body>
+</html>
