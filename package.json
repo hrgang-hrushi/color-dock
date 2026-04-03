@@ -1,0 +1,13 @@
+{
+  "name": "chromadock",
+  "version": "1.0.0",
+  "description": "Minimalistic macOS color picker menu bar app",
+  "scripts": {
+    "dev": "swift run",
+    "build": "swift build --configuration release",
+    "installer": "npm run build && bash scripts/create-dmg.sh",
+    "clean": "swift package clean && rm -rf .build"
+  },
+  "keywords": ["macos", "color-picker", "menu-bar", "swiftui"],
+  "license": "MIT"
+}
